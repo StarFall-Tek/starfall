@@ -1,9 +1,16 @@
+import { DESK } from '../data/deskConfig'
 import { createSeedBook } from '../data/seedBook'
 import { parseStoredBook } from './paperStorage'
 import {
+  applyQuickRotates,
   applyRules,
+  bankEarlySeat,
+  isFlatOrDead,
+  liquidTape,
   openPaperLong,
   pickCalmEntries,
+  pickQuickEntries,
+  rotateFlatSeat,
   type PaperBook,
   type PaperPosition,
 } from './paperEngine'
@@ -239,5 +246,185 @@ same(seed.killActive, false)
 same(parseStoredBook(null, NOW).cashUsd, 774.18)
 same(parseStoredBook('{', NOW).positions.length, 5)
 same(parseStoredBook(JSON.stringify(seed), NOW).positions[4]?.symbol, 'AVAX')
+
+same(DESK.liveEnabled, false)
+same(DESK.mode, 'paper')
+same(DESK.maxRiskPerTradeUsd, 50)
+same(DESK.maxOpenPositions, 5)
+same(DESK.stopLossPct, 5)
+same(DESK.dailyLossKillPct, 10)
+
+const stillWorking = applyRules(solBook, quotes([quote('SOL', 102, 2)]), NOW)
+same(stillWorking.actions.length, 0)
+same(stillWorking.book.positions.length, 1)
+same(isFlatOrDead(sol, 100), true)
+same(isFlatOrDead(sol, 103), false)
+same(isFlatOrDead(sol, 95), false)
+
+const earlyDust = bankEarlySeat(solBook, sol.id, quotes([quote('SOL', 100.5, 1)]), NOW)
+check(earlyDust.error)
+same(earlyDust.action, null)
+same(earlyDust.book.positions.length, 1)
+
+const banked = bankEarlySeat(solBook, sol.id, quotes([quote('SOL', 101, 1)]), NOW)
+same(banked.error, null)
+same(banked.action?.kind, 'quick_scalp')
+same(banked.book.positions.length, 0)
+same(banked.book.cashUsd, 1000.5)
+same(banked.book.cooldowns, {})
+checkMatch(banked.action?.reason ?? '', /gut\/quick-scalp BANK EARLY/)
+checkMatch(banked.action?.reason ?? '', /Full TP/)
+same(openPaperLong(banked.book, 'SOL', quotes([quote('SOL', 101, 1)]), NOW).error, null)
+
+const flatBook = book({ cashUsd: 950, positions: [sol] })
+const rotated = rotateFlatSeat(
+  flatBook,
+  sol.id,
+  null,
+  quotes([quote('SOL', 100, 0), quote('LINK', 10, 4)]),
+  NOW,
+)
+same(rotated.error, null)
+same(rotated.opened, 'LINK')
+same(rotated.action?.kind, 'quick_scalp')
+same(rotated.book.positions.length, 1)
+same(rotated.book.positions[0]?.symbol, 'LINK')
+same(rotated.book.positions[0]?.notionalUsd, 50)
+same(rotated.book.positions[0]?.takeProfitPct, 8)
+same(rotated.book.positions[0]?.stopLossUsd, 9.5)
+same(rotated.book.cooldowns, {})
+same(rotated.book.cashUsd, 950)
+checkMatch(rotated.action?.reason ?? '', /gut\/quick-scalp ROTATE SOL → LINK/)
+checkMatch(rotated.book.journal.at(-1)?.reason ?? '', /gut\/quick-scalp IN LINK/)
+
+const heldWinner = rotateFlatSeat(
+  flatBook,
+  sol.id,
+  null,
+  quotes([quote('SOL', 103, 1), quote('LINK', 10, 6)]),
+  NOW,
+)
+same(heldWinner.opened, null)
+same(heldWinner.book.positions.length, 1)
+same(heldWinner.book.positions[0]?.symbol, 'SOL')
+check(heldWinner.error)
+
+const throughStop = rotateFlatSeat(
+  flatBook,
+  sol.id,
+  'LINK',
+  quotes([quote('SOL', 95, -5), quote('LINK', 10, 4)]),
+  NOW,
+)
+same(throughStop.action, null)
+same(throughStop.book.positions[0]?.symbol, 'SOL')
+checkMatch(throughStop.error ?? '', /stop/i)
+
+const memeRotate = rotateFlatSeat(
+  flatBook,
+  sol.id,
+  'DOGE',
+  quotes([quote('SOL', 100, 0), quote('DOGE', 1, 8)]),
+  NOW,
+)
+same(memeRotate.action, null)
+same(memeRotate.book.positions.length, 1)
+checkMatch(memeRotate.error ?? '', /liquid/)
+
+const movers = pickQuickEntries(
+  book(),
+  quotes([
+    quote('SOL', 1, 6),
+    quote('ADA', 1, 2),
+    quote('XRP', 1, 0.2),
+    quote('DOGE', 1, 20),
+  ]),
+  NOW,
+)
+same(movers, ['SOL', 'ADA'])
+same(
+  pickQuickEntries(
+    book({ positions: ['BTC', 'ETH', 'SOL', 'LINK', 'AVAX'].map((symbol) => pos(symbol, 10)) }),
+    quotes([quote('XRP', 1, 5)]),
+    NOW,
+  ),
+  [],
+)
+
+const linkCooling = book({
+  cooldowns: { LINK: new Date(NOW.getTime() + 60_000).toISOString() },
+})
+same(
+  pickQuickEntries(linkCooling, quotes([quote('LINK', 1, 6), quote('SOL', 1, 4)]), NOW),
+  ['SOL'],
+)
+
+const winner = pos('ETH', 100, { takeProfitPct: 10, takeProfitUsd: 110 })
+const dead = pos('AVAX', 100)
+const quiet = pos('ADA', 100)
+const batch = applyQuickRotates(
+  book({
+    cashUsd: 850,
+    positions: [winner, dead, quiet],
+  }),
+  quotes([
+    quote('ETH', 104, 3),
+    quote('AVAX', 99, -1),
+    quote('ADA', 100.2, 0.2),
+    quote('SOL', 1, 5),
+    quote('LINK', 1, 3),
+  ]),
+  NOW,
+)
+same(batch.opened, ['SOL', 'LINK'])
+same(
+  batch.book.positions.map((position) => position.symbol).sort(),
+  ['ETH', 'LINK', 'SOL'],
+)
+same(batch.book.positions.length, 3)
+same(batch.actions.length, 2)
+same(batch.book.cooldowns, {})
+
+const crowded = ['BTC', 'ETH', 'SOL', 'LINK', 'AVAX'].map((symbol) => pos(symbol, 100))
+const crowdedBook = book({ cashUsd: 750, positions: crowded })
+const swapped = rotateFlatSeat(
+  crowdedBook,
+  't-AVAX',
+  'XRP',
+  quotes([
+    quote('BTC', 100, 0),
+    quote('ETH', 100, 0),
+    quote('SOL', 100, 0),
+    quote('LINK', 100, 0),
+    quote('AVAX', 100, 0),
+    quote('XRP', 1, 4),
+  ]),
+  NOW,
+)
+same(swapped.error, null)
+same(swapped.book.positions.length, 5)
+same(swapped.book.positions.some((position) => position.symbol === 'AVAX'), false)
+same(swapped.book.positions.some((position) => position.symbol === 'XRP'), true)
+same(swapped.book.positions.every((position) => position.notionalUsd === 50), true)
+
+const tape = liquidTape(
+  quotes([
+    quote('SOL', 100, 4),
+    quote('ADA', 1, -2),
+    quote('DOGE', 1, 30),
+    quote('LINK', 10, 1.5),
+    quote('AVAX', 10, -0.5),
+    quote('DOT', 5, 0.2),
+  ]),
+)
+same(
+  tape.strongest.map((row) => row.symbol),
+  ['SOL', 'LINK', 'DOT'],
+)
+same(
+  tape.weakest.map((row) => row.symbol),
+  ['ADA', 'AVAX'],
+)
+same(tape.strongest.some((row) => row.symbol === 'DOGE'), false)
 
 }

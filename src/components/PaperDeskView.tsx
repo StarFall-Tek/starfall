@@ -1,8 +1,15 @@
 import { useState } from 'react'
+import { LiveWatchBar } from './LiveWatchBar'
 import { RULE_ROWS } from '../data/deskConfig'
 import { WATCHLIST } from '../data/watchlist'
 import { formatEt, formatPct, formatQty, formatUsd } from '../lib/format'
+import { autoRotateTarget, bankEarlyBlock, liquidTape } from '../lib/paperEngine'
+import { setQuickScalpEnabled, useQuickScalp } from '../lib/quickMode'
 import { usePaperBook } from '../lib/usePaperBook'
+
+function coinName(symbol: string): string {
+  return WATCHLIST.find((item) => item.symbol === symbol)?.name ?? symbol
+}
 
 export function PaperDeskView() {
   const {
@@ -16,13 +23,20 @@ export function PaperDeskView() {
     runRules,
     analyzeAndAttack,
     buyManual,
+    bankEarly,
+    rotateSeat,
+    quickSeat,
   } = usePaperBook()
+  const quick = useQuickScalp()
   const [symbol, setSymbol] = useState('XRP')
   const block = entryBlock(symbol)
   const hardBlock = block != null && block.code !== 'price'
   const priceMissing = block?.code === 'price' && quotes.fetchedAt != null && !quotes.loading
   const { summary } = marked
   const dayUp = (summary.dayPnlPct ?? 0) >= 0
+  const tape = liquidTape(quotes.quotes)
+  const tapeReady = tape.strongest.length > 0 || tape.weakest.length > 0
+  const now = new Date()
 
   return (
     <section className="view" aria-labelledby="paper-title" aria-busy={busy}>
@@ -34,12 +48,7 @@ export function PaperDeskView() {
           $1,000 paper book. Cash below is what is not in a seat. Live trading stays off —
           these buttons only update the paper ledger.
         </p>
-        <p className="timestamp">
-          {quotes.fetchedAt
-            ? `Marks as of ${formatEt(new Date(quotes.fetchedAt))}`
-            : 'Fetching Coinbase marks…'}
-          {quotes.loading && quotes.fetchedAt ? ' · updating' : ''}
-        </p>
+        <LiveWatchBar />
       </header>
 
       {book.killActive && (
@@ -63,6 +72,27 @@ export function PaperDeskView() {
         </p>
       )}
 
+      <article className={`card mode-card ${quick ? 'on' : ''}`}>
+        <div className="mode-head">
+          <h2>
+            Quick in/out <span className="badge example">GUT / QUICK-SCALP</span>
+          </h2>
+          <button
+            type="button"
+            className={`btn tiny ${quick ? 'gold' : ''}`}
+            aria-pressed={quick}
+            onClick={() => setQuickScalpEnabled(!quick)}
+          >
+            {quick ? 'On' : 'Off'}
+          </button>
+        </div>
+        <p className="muted">
+          When on, Analyze + attack can rotate flat or dead seats into liquid movers before
+          the full +8% / +10% take-profit, and each seat can bank early. Stops stay −5%. $50,
+          5 seats, and the −10% daily kill stay locked. Paper only.
+        </p>
+      </article>
+
       <div className="action-bar">
         <button type="button" className="btn primary" onClick={() => void runRules()} disabled={busy}>
           {busy ? 'Working…' : 'Run rules'}
@@ -77,11 +107,91 @@ export function PaperDeskView() {
         </button>
       </div>
       <p className="muted action-help">
-        Run rules fetches Coinbase prices, paper-sells take-profit, stop, and daily-kill hits,
-        then refreshes marks. Analyze + attack does that, then opens up to two calm watchlist
-        seats ($50 each) when a seat and cash are free. Parabolic day spikes are skipped when a
-        calmer name is available. One meme seat max.
+        {quick
+          ? 'Quick in/out is on. Run rules still paper-sells the full take-profit, the −5% stop, and the daily kill. Analyze + attack does that, then can rotate up to two flat or dead seats into liquid movers and fill a free seat with a mover. A seat up about +1% or better stays on its TP unless you bank early.'
+          : 'Run rules fetches Coinbase prices, paper-sells take-profit, stop, and daily-kill hits, then refreshes marks. Analyze + attack does that, then opens up to two calm watchlist seats ($50 each) when a seat and cash are free. Parabolic day spikes are skipped when a calmer name is available. One meme seat max.'}
       </p>
+
+      <article className="card movers-card">
+        <h2>Movers radar</h2>
+        <p className="muted">
+          Day’s strongest and weakest liquid coins from the public Coinbase 24h change. Memes
+          stay off this tape. Paper only — pick a rotate without leaving the desk.
+        </p>
+        {!tapeReady && (
+          <p className="empty">
+            {quotes.loading || !quotes.fetchedAt
+              ? 'Waiting for Coinbase 24h stats…'
+              : 'No liquid 24h change yet.'}
+          </p>
+        )}
+        {tapeReady && (
+          <div className="tape-grid">
+            <div>
+              <h3 className="tape-label">Strongest</h3>
+              <ul className="mover-list">
+                {tape.strongest.map((row) => {
+                  const held = book.positions.some((position) => position.symbol === row.symbol)
+                  const rowBlock = entryBlock(row.symbol)
+                  const canOpen = quick && rowBlock == null
+                  const canRotate = quick && !held && rowBlock?.code === 'seats'
+                  const disabled = busy || (!canOpen && !canRotate)
+                  const label = canRotate ? 'Rotate in' : 'Quick seat'
+                  const title = !quick
+                    ? 'Turn on quick in/out'
+                    : held
+                      ? `${row.symbol} already has an open paper seat.`
+                      : canOpen
+                        ? `Paper $50 ${row.symbol}`
+                        : canRotate
+                          ? `Rotate the flattest seat into ${row.symbol}`
+                          : (rowBlock?.message ?? 'Unavailable')
+                  return (
+                    <li key={row.symbol} className="mover-row">
+                      <div className="mover-main">
+                        <strong>{row.symbol}</strong>{' '}
+                        <span className="muted thin">{coinName(row.symbol)}</span>
+                        <span className="meta mover-px">{formatUsd(row.priceUsd)}</span>
+                      </div>
+                      <span className={`mover-chg ${row.change24hPct >= 0 ? 'up' : 'down'}`}>
+                        {formatPct(row.change24hPct, 1)}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn tiny"
+                        disabled={disabled}
+                        title={title}
+                        onClick={() => void quickSeat(row.symbol)}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+            {tape.weakest.length > 0 && (
+            <div>
+              <h3 className="tape-label">Weakest</h3>
+              <ul className="mover-list">
+                {tape.weakest.map((row) => (
+                  <li key={row.symbol} className="mover-row">
+                    <div className="mover-main">
+                      <strong>{row.symbol}</strong>{' '}
+                      <span className="muted thin">{coinName(row.symbol)}</span>
+                      <span className="meta mover-px">{formatUsd(row.priceUsd)}</span>
+                    </div>
+                    <span className={`mover-chg ${row.change24hPct >= 0 ? 'up' : 'down'}`}>
+                      {formatPct(row.change24hPct, 1)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            )}
+          </div>
+        )}
+      </article>
 
       <div className="card-grid dense book-grid">
         <article className="card stat-card">
@@ -120,12 +230,16 @@ export function PaperDeskView() {
           <ul className="seat-list">
             {marked.positions.map((position) => {
               const up = (position.pnlPct ?? 0) >= 0
+              const bankBlock = bankEarlyBlock(position, quotes.quotes)
+              const mover =
+                position.liveUsd == null
+                  ? null
+                  : autoRotateTarget(book, position, quotes.quotes, now)
               return (
                 <li key={position.id} className="seat">
                   <div className="seat-top">
                     <h3>
-                      {position.symbol}{' '}
-                      <span className="muted thin">long</span>
+                      {position.symbol} <span className="muted thin">long</span>
                     </h3>
                     <span className="badge paper">PAPER</span>
                     {position.meme && <span className="badge example">MEME</span>}
@@ -161,6 +275,32 @@ export function PaperDeskView() {
                     {formatEt(new Date(position.openedAt))}
                   </p>
                   <p className="note">{position.reason}</p>
+                  {quick && (
+                    <div className="seat-actions">
+                      <button
+                        type="button"
+                        className="btn tiny gold"
+                        disabled={busy || bankBlock != null}
+                        title={bankBlock ?? 'Paper-sell now. The full TP stays the rule target.'}
+                        onClick={() => void bankEarly(position.id)}
+                      >
+                        Bank early · gut
+                      </button>
+                      <button
+                        type="button"
+                        className="btn tiny"
+                        disabled={busy || mover == null}
+                        title={
+                          mover
+                            ? `Rotate this flat seat into ${mover}`
+                            : 'Rotate waits for a flat or dead seat and a stronger liquid mover.'
+                        }
+                        onClick={() => void rotateSeat(position.id)}
+                      >
+                        {mover ? `Rotate → ${mover} · quick-scalp` : 'Rotate · quick-scalp'}
+                      </button>
+                    </div>
+                  )}
                 </li>
               )
             })}

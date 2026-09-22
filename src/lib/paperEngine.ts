@@ -47,7 +47,7 @@ export type PaperBook = {
   updatedAt: string
 }
 
-export type CloseKind = 'take_profit' | 'stop_loss' | 'daily_kill'
+export type CloseKind = 'take_profit' | 'stop_loss' | 'daily_kill' | 'quick_scalp'
 
 export type CloseAction = {
   kind: CloseKind
@@ -229,6 +229,9 @@ function closeReason(
   if (kind === 'stop_loss') {
     return `Paper STOP −${DESK.stopLossPct}% rule @ ${at} (entry ${entry}; ${chg})`
   }
+  if (kind === 'quick_scalp') {
+    return `Paper gut/quick-scalp @ ${at} (entry ${entry}; ${chg}). Full TP stays +${position.takeProfitPct}% at ${formatUsd(position.takeProfitUsd)}.`
+  }
   return `Paper daily kill −${DESK.dailyLossKillPct}% day P&L @ ${at} (entry ${entry}; ${chg})`
 }
 
@@ -238,10 +241,11 @@ function closePosition(
   exitUsd: number,
   kind: CloseKind,
   now: Date,
+  reasonOverride?: string,
 ): { book: PaperBook; action: CloseAction } {
   const proceedsUsd = roundCash(position.qty * exitUsd)
   const chgPct = ((exitUsd - position.entryUsd) / position.entryUsd) * 100
-  const reason = closeReason(kind, position, exitUsd, chgPct)
+  const reason = reasonOverride ?? closeReason(kind, position, exitUsd, chgPct)
   const action: CloseAction = {
     kind,
     symbol: position.symbol,
@@ -532,4 +536,330 @@ export function attackReason(symbol: string, quote: Quote | undefined): string {
     return `Paper attack: one meme seat (${symbol}) — ${day}, not a chase`
   }
   return `Paper attack: liquid ${symbol} — calm day structure, ${day}, not a chase`
+}
+
+export type TapeRow = {
+  symbol: string
+  priceUsd: number
+  change24hPct: number
+}
+
+function unrealizedPct(entryUsd: number, price: number): number {
+  return ((price - entryUsd) / entryUsd) * 100
+}
+
+/** Above the stop, short of the full TP, and not green enough to leave alone. */
+export function isFlatOrDead(position: PaperPosition, price: number): boolean {
+  if (!(price > 0)) return false
+  if (price <= position.stopLossUsd) return false
+  if (price >= position.takeProfitUsd) return false
+  return unrealizedPct(position.entryUsd, price) < DESK.quickScalp.holdAbovePct
+}
+
+export function bankEarlyBlock(position: PaperPosition, quotes: Quotes): string | null {
+  const price = quotes[position.symbol]?.priceUsd
+  if (!(price > 0)) return `No Coinbase price for ${position.symbol}.`
+  if (price <= position.stopLossUsd) {
+    return `Price is through the −${DESK.stopLossPct}% stop. Run rules so the stop papers out.`
+  }
+  const pnl = unrealizedPct(position.entryUsd, price)
+  if (pnl < DESK.quickScalp.bankEarlyMinPct) {
+    return `Bank early waits for at least +${DESK.quickScalp.bankEarlyMinPct}%. Full TP is still +${position.takeProfitPct}% at ${formatUsd(position.takeProfitUsd)}.`
+  }
+  return null
+}
+
+function bankEarlyReason(position: PaperPosition, exitUsd: number, chgPct: number): string {
+  return `Paper gut/quick-scalp BANK EARLY @ ${formatUsd(exitUsd)} (entry ${formatUsd(position.entryUsd)}; ${formatPct(chgPct)}). Full TP stays +${position.takeProfitPct}% at ${formatUsd(position.takeProfitUsd)}.`
+}
+
+function rotateOutReason(
+  position: PaperPosition,
+  exitUsd: number,
+  chgPct: number,
+  into: string,
+): string {
+  return `Paper gut/quick-scalp ROTATE ${position.symbol} → ${into} @ ${formatUsd(exitUsd)} (entry ${formatUsd(position.entryUsd)}; ${formatPct(chgPct)}). Flat/dead seat, not a stop. Full TP was +${position.takeProfitPct}%.`
+}
+
+export function quickEntryReason(symbol: string, quote: Quote | undefined): string {
+  const change = quote?.change24hPct
+  const day = change == null ? 'day change n/a' : `${formatPct(change)} 24h`
+  return `Paper gut/quick-scalp IN ${symbol} — liquid mover, ${day}. $${DESK.maxRiskPerTradeUsd} paper seat. Full TP still +${takeProfitPctFor(symbol)}%.`
+}
+
+/**
+ * Day's strongest and weakest liquid watchlist names. Memes stay off this tape.
+ * Public Coinbase change vs the 24h open. No key.
+ */
+export function liquidTape(quotes: Quotes): { strongest: TapeRow[]; weakest: TapeRow[] } {
+  const rows: TapeRow[] = []
+  for (const symbol of WATCHLIST_SYMBOLS) {
+    if (isMemeSymbol(symbol)) continue
+    const quote = quotes[symbol]
+    if (!(quote?.priceUsd > 0) || quote.change24hPct == null) continue
+    rows.push({
+      symbol,
+      priceUsd: quote.priceUsd,
+      change24hPct: quote.change24hPct,
+    })
+  }
+  const strongest = [...rows]
+    .sort((a, b) => b.change24hPct - a.change24hPct || a.symbol.localeCompare(b.symbol))
+    .slice(0, 3)
+  const shown = new Set(strongest.map((row) => row.symbol))
+  const weakest = [...rows]
+    .sort((a, b) => a.change24hPct - b.change24hPct || a.symbol.localeCompare(b.symbol))
+    .filter((row) => !shown.has(row.symbol))
+    .slice(0, 3)
+  return { strongest, weakest }
+}
+
+/** Best liquid name that is up on the day, not held, and not cooling down. */
+export function bestQuickMover(
+  book: PaperBook,
+  quotes: Quotes,
+  now: Date,
+  exclude: ReadonlySet<string> = new Set(),
+): string | null {
+  let best: { symbol: string; change: number } | null = null
+  for (const symbol of WATCHLIST_SYMBOLS) {
+    if (isMemeSymbol(symbol) || exclude.has(symbol)) continue
+    if (book.positions.some((position) => position.symbol === symbol)) continue
+    if (cooldownUntil(book, symbol, now)) continue
+    const quote = quotes[symbol]
+    if (!(quote?.priceUsd > 0) || quote.change24hPct == null) continue
+    if (quote.change24hPct < DESK.quickScalp.moverMinDayPct) continue
+    if (
+      !best ||
+      quote.change24hPct > best.change ||
+      (quote.change24hPct === best.change && symbol.localeCompare(best.symbol) < 0)
+    ) {
+      best = { symbol, change: quote.change24hPct }
+    }
+  }
+  return best?.symbol ?? null
+}
+
+export function flattestSeat(book: PaperBook, quotes: Quotes): PaperPosition | null {
+  let best: { position: PaperPosition; pnl: number } | null = null
+  for (const position of book.positions) {
+    const price = quotes[position.symbol]?.priceUsd
+    if (!(price > 0) || !isFlatOrDead(position, price)) continue
+    const pnl = unrealizedPct(position.entryUsd, price)
+    if (!best || pnl < best.pnl) best = { position, pnl }
+  }
+  return best?.position ?? null
+}
+
+/** Where Analyze would send this flat/dead seat. Null when it should keep the full TP. */
+export function autoRotateTarget(
+  book: PaperBook,
+  position: PaperPosition,
+  quotes: Quotes,
+  now: Date,
+): string | null {
+  const price = quotes[position.symbol]?.priceUsd
+  if (!(price > 0) || !isFlatOrDead(position, price)) return null
+  if (book.cashUsd + position.qty * price < DESK.maxRiskPerTradeUsd) return null
+  const into = bestQuickMover(book, quotes, now)
+  if (!into) return null
+  const intoDay = quotes[into]?.change24hPct
+  const heldDay = quotes[position.symbol]?.change24hPct
+  if (intoDay == null) return null
+  if (heldDay != null && intoDay < heldDay + DESK.quickScalp.moverGapPct) return null
+  return into
+}
+
+/**
+ * Paper-sell a green seat before the full +8%/+10% target.
+ * Does not start a cooldown and does not override a −5% stop.
+ */
+export function bankEarlySeat(
+  book: PaperBook,
+  positionId: string,
+  quotes: Quotes,
+  now = new Date(),
+): { book: PaperBook; action: CloseAction | null; error: string | null } {
+  const position = book.positions.find((row) => row.id === positionId)
+  if (!position) return { book, action: null, error: 'That seat is already closed.' }
+  const block = bankEarlyBlock(position, quotes)
+  if (block) return { book, action: null, error: block }
+  const price = quotes[position.symbol]?.priceUsd
+  if (!(price > 0)) return { book, action: null, error: block }
+  const chgPct = unrealizedPct(position.entryUsd, price)
+  const closed = closePosition(
+    book,
+    position,
+    price,
+    'quick_scalp',
+    now,
+    bankEarlyReason(position, price, chgPct),
+  )
+  return { book: closed.book, action: closed.action, error: null }
+}
+
+export type RotateResult = {
+  book: PaperBook
+  action: CloseAction | null
+  extra: CloseAction[]
+  opened: string | null
+  error: string | null
+}
+
+/**
+ * Paper-sell one flat or dead seat and open the replacement at $50.
+ * A named target is an explicit gut pick. A null target uses the auto mover.
+ * Stops, the seat cap, and the daily kill still win.
+ */
+export function rotateFlatSeat(
+  book: PaperBook,
+  positionId: string,
+  intoSymbol: string | null,
+  quotes: Quotes,
+  now = new Date(),
+): RotateResult {
+  const empty: RotateResult = { book, action: null, extra: [], opened: null, error: null }
+  if (book.killActive) {
+    return {
+      ...empty,
+      error: 'Daily kill is on. New paper entries are paused until the next ET day.',
+    }
+  }
+  const position = book.positions.find((row) => row.id === positionId)
+  if (!position) return { ...empty, error: 'That seat is already closed.' }
+  const price = quotes[position.symbol]?.priceUsd
+  if (!(price > 0)) return { ...empty, error: `No Coinbase price for ${position.symbol}.` }
+  if (price <= position.stopLossUsd) {
+    return {
+      ...empty,
+      error: `Price is through the −${DESK.stopLossPct}% stop. Run rules so the stop papers out.`,
+    }
+  }
+  if (!isFlatOrDead(position, price)) {
+    return {
+      ...empty,
+      error: `${position.symbol} is working toward its +${position.takeProfitPct}% target. Bank early if you want out, or leave it.`,
+    }
+  }
+  const into = (intoSymbol ?? autoRotateTarget(book, position, quotes, now) ?? '')
+    .trim()
+    .toUpperCase()
+  if (!into) {
+    return { ...empty, error: 'No liquid mover is up enough to rotate into.' }
+  }
+  if (into === position.symbol) {
+    return { ...empty, error: `${into} is already this seat.` }
+  }
+  if (isMemeSymbol(into)) {
+    return {
+      ...empty,
+      error: 'Quick rotates stay on liquid names. DOGE, PEPE, and SHIB stay on the one-meme cap.',
+    }
+  }
+  if (book.cashUsd + position.qty * price < DESK.maxRiskPerTradeUsd) {
+    return {
+      ...empty,
+      error: 'Rotating out would leave less than $50 paper cash for the new seat.',
+    }
+  }
+  const chgPct = unrealizedPct(position.entryUsd, price)
+  const closed = closePosition(
+    book,
+    position,
+    price,
+    'quick_scalp',
+    now,
+    rotateOutReason(position, price, chgPct, into),
+  )
+  let next = closed.book
+  const marked = equityOf(next, quotes)
+  if (
+    next.dayStartEquityUsd != null &&
+    marked.complete &&
+    isDailyKill(next.dayStartEquityUsd, marked.equity)
+  ) {
+    const killed = applyRules(next, quotes, now)
+    return {
+      book: killed.book,
+      action: closed.action,
+      extra: killed.actions,
+      opened: null,
+      error: 'That rotate realized a loss through the −10% daily kill. No new seat.',
+    }
+  }
+  const filled = openPaperLong(next, into, quotes, now, quickEntryReason(into, quotes[into]))
+  if (filled.error || !filled.position) {
+    return {
+      book: next,
+      action: closed.action,
+      extra: [],
+      opened: null,
+      error: filled.error?.message ?? 'Closed the flat seat, but the new paper seat was blocked.',
+    }
+  }
+  return { book: filled.book, action: closed.action, extra: [], opened: into, error: null }
+}
+
+function flatSeats(book: PaperBook, quotes: Quotes): PaperPosition[] {
+  return book.positions
+    .filter((position) => {
+      const price = quotes[position.symbol]?.priceUsd
+      return price > 0 && isFlatOrDead(position, price)
+    })
+    .sort((a, b) => {
+      const left = unrealizedPct(a.entryUsd, quotes[a.symbol]?.priceUsd ?? a.entryUsd)
+      const right = unrealizedPct(b.entryUsd, quotes[b.symbol]?.priceUsd ?? b.entryUsd)
+      return left - right
+    })
+}
+
+/** Up to two flat/dead seats, weakest first, into stronger liquid names. */
+export function applyQuickRotates(
+  book: PaperBook,
+  quotes: Quotes,
+  now = new Date(),
+): { book: PaperBook; actions: CloseAction[]; opened: string[] } {
+  let next = book
+  const actions: CloseAction[] = []
+  const opened: string[] = []
+  if (book.killActive) return { book, actions, opened }
+  for (let n = 0; n < DESK.maxNewSeatsPerAttack; n += 1) {
+    const seat = flatSeats(next, quotes).find((position) =>
+      autoRotateTarget(next, position, quotes, now),
+    )
+    if (!seat) break
+    const rotated = rotateFlatSeat(next, seat.id, null, quotes, now)
+    if (!rotated.action || !rotated.opened) break
+    next = rotated.book
+    actions.push(rotated.action, ...rotated.extra)
+    opened.push(rotated.opened)
+  }
+  return { book: next, actions, opened }
+}
+
+/**
+ * Up to two new seats in the strongest liquid movers.
+ * Skips memes. Still respects cash, seats, cooldown, and the daily kill.
+ */
+export function pickQuickEntries(book: PaperBook, quotes: Quotes, now = new Date()): string[] {
+  if (book.killActive) return []
+  if (book.cashUsd < DESK.maxRiskPerTradeUsd) return []
+  const freeSeats = DESK.maxOpenPositions - book.positions.length
+  const freeCash = Math.floor(book.cashUsd / DESK.maxRiskPerTradeUsd)
+  const limit = Math.min(DESK.maxNewSeatsPerAttack, freeSeats, freeCash)
+  if (limit <= 0) return []
+
+  const ranked: { symbol: string; change: number }[] = []
+  for (const symbol of WATCHLIST_SYMBOLS) {
+    if (isMemeSymbol(symbol)) continue
+    if (book.positions.some((position) => position.symbol === symbol)) continue
+    if (cooldownUntil(book, symbol, now)) continue
+    const quote = quotes[symbol]
+    if (!(quote?.priceUsd > 0) || quote.change24hPct == null) continue
+    if (quote.change24hPct < DESK.quickScalp.moverMinDayPct) continue
+    ranked.push({ symbol, change: quote.change24hPct })
+  }
+  ranked.sort((a, b) => b.change - a.change || a.symbol.localeCompare(b.symbol))
+  return ranked.slice(0, limit).map((row) => row.symbol)
 }

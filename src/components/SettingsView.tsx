@@ -18,6 +18,10 @@ export function SettingsView() {
             Mode is {DESK.mode}. live_enabled is {String(DESK.liveEnabled)}. Exchange is{' '}
             {DESK.exchangeLabel}. Clock is {DESK.timezone}.
           </p>
+          <p className="note">
+            Live watch refreshes public Coinbase prices on Digest and Paper. Quick in/out is an
+            optional paper bias for earlier flips. Neither turns live trading on.
+          </p>
         </article>
 
         <article className="card rules-card">

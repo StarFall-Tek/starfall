@@ -1,11 +1,13 @@
+import { LiveWatchBar } from './LiveWatchBar'
 import { DIGEST_COPY } from '../data/digest'
 import { WATCHLIST } from '../data/watchlist'
-import { formatEt, formatPct, formatUsd } from '../lib/format'
-import { useLiveQuotes } from '../lib/quoteStore'
+import { formatPct, formatUsd } from '../lib/format'
+import { useMarketWatch } from '../lib/liveWatch'
+import { useQuoteSnap } from '../lib/quoteStore'
 
 export function DigestView() {
-  const snap = useLiveQuotes(WATCHLIST.map((item) => item.symbol))
-  const asOf = snap.fetchedAt ? formatEt(new Date(snap.fetchedAt)) : null
+  useMarketWatch(WATCHLIST.map((item) => item.symbol))
+  const snap = useQuoteSnap()
 
   return (
     <section className="view" aria-labelledby="digest-title">
@@ -15,14 +17,7 @@ export function DigestView() {
           Watchlist prices from the public Coinbase Exchange ticker. No API key. Theme lines
           are plain-English stubs — there is no news feed in this build.
         </p>
-        <p className="timestamp">
-          {snap.loading && !asOf
-            ? 'Fetching Coinbase prices…'
-            : asOf
-              ? `As of ${asOf}`
-              : 'Coinbase prices unavailable'}
-          {snap.loading && asOf ? ' · updating' : ''}
-        </p>
+        <LiveWatchBar />
       </header>
 
       {snap.error && (

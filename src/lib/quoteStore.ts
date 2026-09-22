@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import { fetchCoinbaseQuotes, type Quotes } from './prices'
 
 export type QuoteSnap = {
@@ -67,15 +67,5 @@ export async function refreshQuotes(symbols: readonly string[]): Promise<QuoteSn
       error: 'Coinbase prices are unavailable right now.',
     })
   }
-  return snap
-}
-
-export function useLiveQuotes(symbols: readonly string[]): QuoteSnap {
-  const key = symbols.join(',')
-  const snap = useQuoteSnap()
-  useEffect(() => {
-    const list = key.split(',').filter(Boolean)
-    void refreshQuotes(list)
-  }, [key])
   return snap
 }
