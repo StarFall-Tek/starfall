@@ -22,6 +22,20 @@ export const DESK = {
   /** Day change at or above this is a parabolic spike for attack selection. */
   parabolicDayPct: 8,
   maxNewSeatsPerAttack: 2,
+  /**
+   * Quick in/out is an optional paper bias. It does not move the hard caps:
+   * $50, 5 seats, −5% stop, −10% daily kill, or live_enabled.
+   */
+  quickScalp: {
+    /** At or above this unrealized gain, Analyze leaves the seat on its full TP. */
+    holdAbovePct: 1,
+    /** Manual bank-early needs at least this unrealized gain. */
+    bankEarlyMinPct: 0.75,
+    /** Auto-rotate only when the replacement day change leads by this many points. */
+    moverGapPct: 1.5,
+    /** Auto entries want a liquid name that is actually up on the day. */
+    moverMinDayPct: 1,
+  },
   notFinancialAdvice: true,
 }
 
