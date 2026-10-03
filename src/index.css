@@ -708,7 +708,7 @@ code {
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.15rem;
   padding: 0.35rem 0.35rem calc(0.35rem + var(--safe-b));
   background: rgba(11, 15, 26, 0.92);
@@ -792,4 +792,104 @@ code {
   margin: 0;
   color: var(--text);
   font-size: 0.9rem;
+}
+
+/* ---- Crypto Scout panel ---- */
+.scout-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.scout-title {
+  background: linear-gradient(90deg, #e8c56a 0%, #f3e6b8 40%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.scout-title .badge {
+  -webkit-text-fill-color: initial;
+}
+.scout .card {
+  margin-bottom: 0.65rem;
+}
+.scout .card-grid .card {
+  margin-bottom: 0;
+}
+.chg-inline.up { color: var(--up); }
+.chg-inline.down { color: var(--down); }
+.badge.anchor {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--indigo);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.scout-seat + .scout-seat {
+  margin-top: 0.6rem;
+}
+.scout-rules {
+  margin: 0.2rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.86rem;
+}
+.scout-rules li + li { margin-top: 0.25rem; }
+.scout-trades li { list-style: none; }
+.scout-trades .meta { display: inline; }
+.scout-trades p.meta { display: block; margin-top: 0.1rem; }
+.scout-journal + .scout-journal {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+.scout-chat {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.12), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.chat-log {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.25rem 0 0.5rem;
+}
+.bubble {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  max-width: 88%;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.bubble.me {
+  align-self: flex-end;
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.bubble.scout {
+  align-self: flex-start;
+  background: rgba(232, 197, 106, 0.08);
+  border: 1px solid rgba(232, 197, 106, 0.3);
+}
+.bubble.typing { color: var(--muted); font-style: italic; }
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.chat-input {
+  flex: 1;
+  resize: vertical;
+  min-height: 2.6rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  font-size: 0.9rem;
+}
+.chat-input:focus {
+  outline: none;
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
 }

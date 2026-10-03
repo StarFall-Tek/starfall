@@ -62,7 +62,7 @@ export default defineConfig({
         // Never forever-cache API/price responses — exclude from precache
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webmanifest}'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/scout\//, /^\/\.netlify\//],
         runtimeCaching: [
           {
             // HTML / navigation — network-first (Lucifer tip)
@@ -91,6 +91,7 @@ export default defineConfig({
             // Future public price APIs — network-only (never forever-cache)
             urlPattern: ({ url }) =>
               url.pathname.startsWith('/api/') ||
+              url.pathname.startsWith('/scout/') ||
               /coingecko|binance|coinbase|cryptocompare/i.test(url.hostname),
             handler: 'NetworkOnly',
           },
