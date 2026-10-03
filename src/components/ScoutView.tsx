@@ -194,13 +194,15 @@ function ScoutChat() {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const endRef = useRef<HTMLDivElement>(null)
+  const logRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     scoutStatus().then(setConnected)
   }, [])
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: 'nearest' })
+    // Scroll only the chat log, never the page.
+    const el = logRef.current
+    if (el && (turns.length > 0 || busy)) el.scrollTop = el.scrollHeight
   }, [turns, busy])
 
   async function send(e: FormEvent) {
@@ -235,7 +237,7 @@ function ScoutChat() {
         </p>
       ) : (
         <>
-          <div className="chat-log" aria-live="polite">
+          <div className="chat-log" aria-live="polite" ref={logRef}>
             {turns.length === 0 && (
               <p className="muted">Ask about the book, a seat, or why Scout sat in cash. Paper only.</p>
             )}
@@ -246,7 +248,6 @@ function ScoutChat() {
             ))}
             {busy && <p className="bubble scout typing">Scout is thinking…</p>}
             {err && <p className="notice">{err}</p>}
-            <div ref={endRef} />
           </div>
           <form className="chat-form" onSubmit={send}>
             <textarea

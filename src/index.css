@@ -831,7 +831,10 @@ code {
   font-size: 0.86rem;
 }
 .scout-rules li + li { margin-top: 0.25rem; }
-.scout-trades li { list-style: none; }
+.journal.scout-trades li {
+  display: block;
+  list-style: none;
+}
 .scout-trades .meta { display: inline; }
 .scout-trades p.meta { display: block; margin-top: 0.1rem; }
 .scout-journal + .scout-journal {
