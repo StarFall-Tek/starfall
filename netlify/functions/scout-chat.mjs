@@ -3,7 +3,7 @@
 // GET  /api/scout-chat  -> { connected: boolean }
 // POST /api/scout-chat  { message: string, history?: [{ role: 'user'|'model', text: string }] }
 
-const MODELS = (process.env.GEMINI_MODEL || 'gemini-3.8-flash,gemini-3.5-flash-lite')
+const MODELS = (process.env.GEMINI_MODEL || 'gemini-3.5-flash,gemini-3.5-flash-lite')
   .split(',').map((m) => m.trim()).filter(Boolean)
 const MAX_BODY = 16_000
 const MAX_MSG = 1_000
@@ -59,12 +59,12 @@ function cleanHistory(history) {
     .map((t) => ({ role: t.role, parts: [{ text: t.text.slice(0, MAX_TURN_CHARS) }] }))
 }
 
-async function callGemini(model, key, body) {
+async function callGemini(model, key, body, timeoutMs) {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(22_000),
+    signal: AbortSignal.timeout(timeoutMs),
   })
   const data = await res.json().catch(() => ({}))
   return { ok: res.ok, status: res.status, data }
@@ -101,13 +101,18 @@ export default async (req, context) => {
     generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
   }
 
+  // Netlify sync functions stop at ~10s: give the primary model ~6.5s, then fall back.
+  const deadline = Date.now() + 9_300
   let last
-  for (const model of MODELS) {
+  for (const [i, model] of MODELS.entries()) {
+    const remaining = deadline - Date.now()
+    if (remaining < 1_500) break
+    const timeoutMs = i < MODELS.length - 1 ? Math.min(6_500, remaining) : remaining
     const b = model.startsWith('gemini-3') && !model.includes('lite')
       ? { ...body, generationConfig: { ...body.generationConfig, thinkingConfig: { thinkingLevel: 'low' } } }
       : body
     try {
-      last = await callGemini(model, key, b)
+      last = await callGemini(model, key, b, timeoutMs)
     } catch (e) {
       last = { ok: false, status: 504, data: { error: { message: String(e?.name || e) } } }
     }
@@ -117,7 +122,7 @@ export default async (req, context) => {
       if (reply) return json(200, { reply, model })
       last = { ok: false, status: 502, data: { error: { message: last.data?.candidates?.[0]?.finishReason || 'empty' } } }
     }
-    if (![404, 429, 500, 502, 503, 504].includes(last.status)) break
+    console.warn('scout-chat model failed', model, last.status, last.data?.error?.message)
   }
   console.error('scout-chat gemini error', last?.status, last?.data?.error?.message)
   const busy = last?.status === 429

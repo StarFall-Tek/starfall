@@ -65,8 +65,9 @@ trades, latest journal entries, current rules) and a chat with Crypto Scout.
   never force-pushes, refuses `main` unless `SCOUT_ALLOW_MAIN=1`). Add `--deploy` to also run
   `netlify deploy --prod`, or `--no-push` to commit only.
 - Chat runs through the Netlify Function `netlify/functions/scout-chat.mjs` at `/api/scout-chat`.
-  It calls Google Gemini (default `gemini-3.8-flash`, falls back to `gemini-3.5-flash-lite`;
-  override with `GEMINI_MODEL`). `GEMINI_API_KEY` is a server-side Netlify env var and is never
+  It calls Google Gemini free-tier models (default `gemini-3.5-flash`, falls back to `gemini-3.5-flash-lite`;
+  override with a comma list in `GEMINI_MODEL`, e.g. `gemini-3.8-flash,gemini-3.5-flash-lite`; 3.8 Flash was often
+  slower than the 10s function limit or "high demand" in testing). `GEMINI_API_KEY` is a server-side Netlify env var and is never
   sent to the browser. Without it the panel shows "Chat not connected yet".
 - Limits: 1,000-character messages, last 10 turns, 16 KB body, ~8 messages/min and 150/day per
   IP per function instance, plus a Netlify rate limit of 20 requests/min per IP.
