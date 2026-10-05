@@ -1,0 +1,357 @@
+{
+  "schema": 1,
+  "generated_at": "2026-10-03T16:20:07.938Z",
+  "as_of": "2026-10-03T00:48:17.283Z",
+  "persona": "Crypto Scout",
+  "desk": "LOEB House",
+  "mode": "paper",
+  "live_enabled": false,
+  "exchange": "coinbase",
+  "not_financial_advice": true,
+  "book": {
+    "start_usd": 10000,
+    "equity_usd": 9839.96,
+    "cash_usd": 9336.12,
+    "pnl_usd": -160.04,
+    "pnl_pct": -1.6,
+    "day_reference_usd": 9882.46,
+    "day_pnl_usd": -42.5,
+    "day_pnl_pct": -0.43,
+    "kill_level_usd": 9388.33,
+    "daily_kill": false,
+    "seats_used": 1,
+    "max_seats": 8
+  },
+  "positions": [
+    {
+      "symbol": "BTC",
+      "role": "anchor",
+      "side": "long",
+      "qty": 0.005954492670674516,
+      "entry_usd": 83970.21,
+      "mark_usd": 84614.56,
+      "notional_usd": 500,
+      "mark_value_usd": 503.8368,
+      "pnl_usd": 3.8368,
+      "pnl_pct": 0.767,
+      "stop_loss_usd": 79771.7,
+      "stop_loss_pct": 5,
+      "take_profit_usd": null,
+      "take_profit_pct": null,
+      "trailing_active": false,
+      "high_water_usd": 86931.79,
+      "opened_at": "2026-09-25T19:08:27.457Z"
+    }
+  ],
+  "cooldowns": [
+    {
+      "symbol": "SOL",
+      "until": "2026-10-03T18:46:49.732Z",
+      "reason": "hard_stop (-4%)"
+    }
+  ],
+  "last_note": "quiet watch — no fills/exits; BTC anchor only; Friday post-8:25 PM flatten (none open); no new entries; TP +4%/trail +3%±2%",
+  "scan_near": [
+    {
+      "symbol": "AAVE",
+      "chg_pct": 4.223,
+      "note": "in +3..+12 and ~$21.1M 24h vol but past 7:30 PM ET entry cutoff; Friday flatten window — no new fast seats"
+    }
+  ],
+  "trades": {
+    "total": 75,
+    "recent": [
+      {
+        "at": "2026-10-02T18:46:49.732Z",
+        "side": "sell",
+        "symbol": "SOL",
+        "qty": 6.1010331082730005,
+        "price_usd": 117.74,
+        "notional_usd": 718.3356,
+        "reason": "hard_stop (-4%)",
+        "mode": "paper",
+        "pnl_pct": -4.222,
+        "proceeds_usd": 718.3356
+      },
+      {
+        "at": "2026-10-02T13:45:20.220Z",
+        "side": "buy",
+        "symbol": "SOL",
+        "qty": 6.1010331082730005,
+        "price_usd": 122.93,
+        "notional_usd": 750,
+        "reason": "Fast-money entry: +4.25% vs 24h open; last-6h volume 1.1x earlier; 4h-block higher-lows 1.00; largest 1h candle ~46% of gain",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-10-01T11:58:03.371Z",
+        "side": "sell",
+        "symbol": "NEAR",
+        "qty": 139.766310728462,
+        "price_usd": 5.116,
+        "notional_usd": 715.0444,
+        "reason": "hard_stop (-4%)",
+        "mode": "paper",
+        "pnl_pct": -4.661,
+        "proceeds_usd": 715.0444
+      },
+      {
+        "at": "2026-09-30T19:17:46.826Z",
+        "side": "buy",
+        "symbol": "NEAR",
+        "qty": 139.766310728462,
+        "price_usd": 5.3661,
+        "notional_usd": 750,
+        "reason": "Fast-money entry: +8.14% vs 24h open; last-6h volume 1.13x earlier; 4h-block higher-lows 0.80; largest 1h candle ~49% of gain",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-09-30T18:48:06.258Z",
+        "side": "sell",
+        "symbol": "NEAR",
+        "qty": 139.07690025404716,
+        "price_usd": 5.3726,
+        "notional_usd": 747.2046,
+        "reason": "time_stop (flat within ±1.5% after 6h)",
+        "mode": "paper",
+        "pnl_pct": -0.373,
+        "proceeds_usd": 747.2046
+      },
+      {
+        "at": "2026-09-30T12:44:52.955Z",
+        "side": "buy",
+        "symbol": "NEAR",
+        "qty": 139.07690025404716,
+        "price_usd": 5.3927,
+        "notional_usd": 750,
+        "reason": "Fast-money entry: +10.77% vs 24h open; last-6h volume 1.2x earlier; 4h-block higher-lows 0.60; largest 1h candle ~49% of gain",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-09-29T16:54:05.880Z",
+        "side": "sell",
+        "symbol": "XRP",
+        "qty": 483.4031582339671,
+        "price_usd": 1.482,
+        "notional_usd": 716.4035,
+        "reason": "hard_stop (-4%)",
+        "mode": "paper",
+        "pnl_pct": -4.48,
+        "proceeds_usd": 716.4035
+      },
+      {
+        "at": "2026-09-29T15:26:54.089Z",
+        "side": "sell",
+        "symbol": "AVAX",
+        "qty": 63.954975697109234,
+        "price_usd": 11.187,
+        "notional_usd": 715.4643,
+        "reason": "hard_stop (-4%)",
+        "mode": "paper",
+        "pnl_pct": -4.605,
+        "proceeds_usd": 715.4643
+      },
+      {
+        "at": "2026-09-29T14:25:57.596Z",
+        "side": "buy",
+        "symbol": "XRP",
+        "qty": 483.4031582339671,
+        "price_usd": 1.5515,
+        "notional_usd": 750,
+        "reason": "Fast-money entry: +4.46% vs 24h open; last-6h volume 1.3x earlier; 4h-block higher-lows 0.80; largest 1h candle ~48% of gain",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-09-29T11:56:32.986Z",
+        "side": "buy",
+        "symbol": "AVAX",
+        "qty": 63.954975697109234,
+        "price_usd": 11.727,
+        "notional_usd": 750,
+        "reason": "Fast-money entry: +11.69% vs 24h open; last-6h volume 3.9x earlier; 4h-block higher-lows 1.00; largest 1h candle ~39% of gain",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-09-27T01:18:49.049Z",
+        "side": "sell",
+        "symbol": "ADA",
+        "qty": 1962.3233908948193,
+        "price_usd": 0.25169,
+        "notional_usd": 493.8972,
+        "reason": "time_stop (overdue; weekend gap)",
+        "mode": "paper",
+        "pnl_pct": -1.221,
+        "proceeds_usd": 493.8972
+      },
+      {
+        "at": "2026-09-27T01:18:49.049Z",
+        "side": "sell",
+        "symbol": "SOL",
+        "qty": 6.145022531749283,
+        "price_usd": 120.96,
+        "notional_usd": 743.3019,
+        "reason": "time_stop (overdue; weekend gap)",
+        "mode": "paper",
+        "pnl_pct": -0.893,
+        "proceeds_usd": 743.3019
+      },
+      {
+        "at": "2026-09-25T19:16:09.480Z",
+        "side": "buy",
+        "symbol": "ADA",
+        "qty": 1962.3233908948193,
+        "price_usd": 0.2548,
+        "notional_usd": 500,
+        "reason": "Fast-money entry: Qualifier (edge of band): +2.74% vs 24h open; last-6h volume 1.7x earlier; 4h-block lows 0.2461→0.2529 higher; largest 1h candle ~38% of gain",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-09-25T19:16:09.480Z",
+        "side": "buy",
+        "symbol": "SOL",
+        "qty": 6.145022531749283,
+        "price_usd": 122.05,
+        "notional_usd": 750,
+        "reason": "Fast-money entry: Best qualifier: +4.10% vs 24h open; last-6h volume 2.3x the earlier 18h avg; 4h-block lows 116.1→120.1 mostly higher; largest 1h candle ~35% of gain (steady)",
+        "mode": "paper",
+        "pnl_pct": null,
+        "proceeds_usd": null
+      },
+      {
+        "at": "2026-09-25T19:16:09.480Z",
+        "side": "sell",
+        "symbol": "XLM",
+        "qty": 2281.7193211428676,
+        "price_usd": 0.219442,
+        "notional_usd": 500.7051,
+        "reason": "fast_money_rotation",
+        "mode": "paper",
+        "pnl_pct": 0.141,
+        "proceeds_usd": 500.7051
+      }
+    ]
+  },
+  "journal": [
+    {
+      "at": "2026-10-03T00:48:00.000Z",
+      "label": "2026-10-02 20:48 ET",
+      "title": "live watch (quiet)",
+      "lines": [
+        "BTC anchor mark $84,614.56 (+0.767% vs entry); book mark $9,839.96 (day -42.50 / -0.430% vs ref $9,882.46).",
+        "Friday post-flatten window: no fast seats open; no entries after 7:30 PM; no fills/exits/kill. Paper only."
+      ]
+    },
+    {
+      "at": "2026-10-03T00:14:00.000Z",
+      "label": "2026-10-02 20:14 ET",
+      "title": "live market watch (quiet)",
+      "lines": [
+        "Source: Coinbase public. PAPER only. Not financial advice.",
+        "BTC anchor HOLD @ $84,514.68 (entry $83,970.21, +0.65%, mark $503.24; HW $86,931.79; stop $79,771.70; age 173.1h).",
+        "Book mark $9,839.3637 vs $10,000 (cash $9,336.1217). Day ref $9,882.4558; kill $9,388.3330 — inactive (day PnL $-43.0921 / -0.436%).",
+        "Exits: none. Entries: none (past 7:30 PM ET cutoff; AAVE +3.94%/~$20.6M noted but blocked).",
+        "Cooldowns: SOL until 2026-10-03T14:46:49-04:00. Friday overnight flatten 8:25 PM ET next (no fast seats to flatten; BTC anchor stays)."
+      ]
+    },
+    {
+      "at": "2026-10-02T23:46:00.000Z",
+      "label": "2026-10-02 19:46 ET",
+      "title": "live market watch (quiet)",
+      "lines": [
+        "Source: Coinbase public. PAPER only. Not financial advice.",
+        "BTC anchor HOLD @ $84,547.41 (entry $83,970.21, +0.69%, mark $503.44; HW $86,931.79; stop $79,771.70; age 172.6h).",
+        "Book mark $9,839.5586 vs $10,000 (cash $9,336.1217). Day ref $9,882.4558; kill $9,388.3330 — inactive (day PnL $-42.8972 / -0.434%).",
+        "Exits: none. Entries: none (past 7:30 PM ET cutoff; AAVE +4.93%/~$21.5M noted but blocked by cutoff).",
+        "Cooldowns: SOL until 2026-10-03T14:46:49-04:00. Friday overnight flatten 8:25 PM ET still ahead (no fast seats to flatten)."
+      ]
+    },
+    {
+      "at": "2026-10-02T23:17:00.000Z",
+      "label": "2026-10-02 19:17 ET",
+      "title": "live market watch (quiet)",
+      "lines": [
+        "Source: Coinbase public. PAPER only. Not financial advice.",
+        "BTC anchor HOLD @ $84,491.20 (entry $83,970.21, +0.62%, mark $503.10; HW $86,931.79; stop $79,771.70; age 172.2h).",
+        "Book mark $9,839.2239 vs $10,000 (cash $9,336.1217). Day ref $9,882.4558; kill $9,388.3330 — inactive (day PnL $-43.2319 / -0.437%).",
+        "Exits: none. Entries: none (0 full qualifiers; AAVE +5.06%/~$21.4M vol ratio 0.62 fading + candle share ~1.13 + proven-hold fail price<2h-ago; prefer cash).",
+        "Cooldowns: SOL until 2026-10-03T14:46:49-04:00. Entries still OK (before 7:30 PM ET cutoff ~12 min left). Friday overnight flatten 8:25 PM ET still ahead for any fast seats."
+      ]
+    },
+    {
+      "at": "2026-10-02T22:43:00.000Z",
+      "label": "2026-10-02 18:43 ET",
+      "title": "live market watch (quiet)",
+      "lines": [
+        "Mark ~$9,839.27 vs $10,000 (-160.73 / -1.607%); day ref $9,882.4558 (-43.18, -0.437%). Cash $9,336.12. Seats 1/8.",
+        "BTC anchor $84,499.11 (+0.630% vs entry $83,970.21). HW $86,931.79. Stop $79,771.70 (−5%). HOLD. No TP / time-stop exempt. Age 171.58h. No HW update.",
+        "No exits (TP/SL/trail/time). No refill: 0 full qualifiers. Prefer cash (soft tape).",
+        "Near: AAVE +4.80% — vol $22.0M; vr 0.60x fading; hl 0.60; candle share 1.26; proven-hold FAIL. Prefer cash.",
+        "Cooldowns: SOL until ~2026-10-03 14:46 ET. Same-day sold: SOL.",
+        "Daily kill: no (kill $9,388.3330; day PnL $-43.1848 / -0.437% vs ref).",
+        "Friday window: still before 7:30 PM ET entry cutoff; no qualifiers anyway.",
+        "Coinbase Exchange public REST (api.exchange.coinbase.com ticker/stats/candles). Paper only. Not financial advice."
+      ]
+    },
+    {
+      "at": "2026-10-02T22:16:00.000Z",
+      "label": "2026-10-02 18:16 ET",
+      "title": "live market watch (quiet)",
+      "lines": [
+        "Source: Coinbase public. PAPER only. Not financial advice.",
+        "BTC anchor HOLD @ $84,522.07 (entry $83,970.21, +0.657%, mark $503.29; HW $86,931.79; stop $79,771.70; age ~171.1h).",
+        "Book mark $9,839.4077 vs $10,000 (cash $9,336.1217). Day ref $9,882.4558; kill $9,388.3330 — inactive (day PnL $-43.0481 / -0.436%).",
+        "Exits: none. Entries: none (0 full qualifiers; AAVE +4.87%/~$21.9M vol ratio 0.59 fading + candle share ~1.19; prefer cash).",
+        "Cooldowns: SOL until 2026-10-03T14:46:49-04:00. Entries OK (before 7:30 PM ET). Friday overnight flatten 8:25 PM ET still ahead for any fast seats."
+      ]
+    }
+  ],
+  "rules": {
+    "mode": "fast_money",
+    "params": {
+      "take_profit_pct": 4,
+      "trail_arm_pct": 3,
+      "trail_pct": 2,
+      "hard_stop_pct": 4,
+      "entry_band_pct": [
+        3,
+        12
+      ],
+      "proven_hold_hours": 2,
+      "daily_kill_pct": 5,
+      "btc_anchor_stop_pct": 5,
+      "btc_anchor_take_profit": null,
+      "seat_usd": 500,
+      "best_seat_usd": 750,
+      "max_seats": 8,
+      "time_stop_hours": 6,
+      "time_stop_flat_band_pct": 1.5,
+      "cooldown_hours_after_stop": 24,
+      "min_24h_usd_volume": 20000000
+    },
+    "summary": [
+      "Take profit at +4% on every fast seat.",
+      "Trailing stop arms at +3% and then trails 2% below the high.",
+      "Hard stop at −4% from entry.",
+      "Only buy coins up 3–12% vs the 24h open that have held that band for 2 hours (proven hold), with rising volume and >$20M 24h volume.",
+      "Daily kill: stop for the day if the book is down 5%.",
+      "BTC anchor: one held seat, −5% stop, no take profit, exempt from the time stop.",
+      "$500 seats ($750 for the single best idea), 8 seats max, never add to a loser.",
+      "Time stop: cut a seat still flat (±1.5%) after 6h. 24h cooldown after a stop; no same-day re-entry.",
+      "Flat before the overnight gap: fast seats sold at the 8:25 PM ET run; no new fast entries after 7:30 PM ET.",
+      "Paper only. Live needs the exact phrase \"go live STARFALL\". Not financial advice."
+    ],
+    "changed_note": "2026-10-02 17:00 ET (Christopher): TP lowered to +4% for all fast seats; trail arms at +3% and trails 2% below high; hard stop -4% unchanged; BTC anchor still no TP."
+  }
+}

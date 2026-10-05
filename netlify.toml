@@ -3,6 +3,16 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Desk snapshot: always revalidate (synced after each market-watch run)
+[[headers]]
+  for = "/scout/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
 [[headers]]
   for = "/*"
   [headers.values]

@@ -1,7 +1,8 @@
-export type TabId = 'digest' | 'paper' | 'rooms' | 'settings'
+export type TabId = 'digest' | 'scout' | 'paper' | 'rooms' | 'settings'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'digest', label: 'Digest', icon: '✦' },
+  { id: 'scout', label: 'Scout', icon: '✧' },
   { id: 'paper', label: 'Paper', icon: '◇' },
   { id: 'rooms', label: 'Rooms', icon: '◈' },
   { id: 'settings', label: 'Settings', icon: '⊛' },

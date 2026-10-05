@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { DigestView } from './components/DigestView'
 import { PaperDeskView } from './components/PaperDeskView'
+import { ScoutView } from './components/ScoutView'
 import { RoomsRadarView } from './components/RoomsRadarView'
 import { SettingsView } from './components/SettingsView'
 import { TabBar, type TabId } from './components/TabBar'
@@ -39,6 +40,7 @@ export default function App() {
 
       <main className="main">
         {tab === 'digest' && <DigestView />}
+        {tab === 'scout' && <ScoutView />}
         {tab === 'paper' && <PaperDeskView />}
         {tab === 'rooms' && <RoomsRadarView />}
         {tab === 'settings' && <SettingsView />}
